@@ -1,10 +1,19 @@
-// renderer/renderer.js
+// src/renderer/main.js
 
-// Fallbacks stables
-const FALLBACK_IMAGE = 'https://via.placeholder.com/600x300/e0e0e0/999999?text=No+Image'
-const FALLBACK_AUTHOR = 'https://via.placeholder.com/40x40/cccccc/666666?text=?'
+const TAGS = [
+  'javascript',
+  'python',
+  'webdev',
+  'devops',
+  'react',
+  'rust',
+  'ai',
+  'github',
+  'beginners',
+  'tutorial'
+]
+let currentTag = null
 
-// Échapper HTML (sécurité basique)
 function escapeHtml(unsafe) {
   if (typeof unsafe !== 'string') return ''
   return unsafe
@@ -15,7 +24,6 @@ function escapeHtml(unsafe) {
     .replace(/'/g, '&#039;')
 }
 
-// Vérifier si c'est une URL HTTP(S) valide
 function isValidHttpUrl(string) {
   try {
     const url = new URL(string)
@@ -25,14 +33,18 @@ function isValidHttpUrl(string) {
   }
 }
 
-// Charger les articles depuis dev.to
-async function loadArticles() {
+async function loadArticles(tag = null) {
   const grid = document.getElementById('articles-grid')
   if (!grid) return
 
   try {
-    const res = await fetch('https://dev.to/api/articles?per_page=30')
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    let url = 'https://dev.to/api/articles?per_page=30'
+    if (tag) url += `&tag=${encodeURIComponent(tag)}`
+
+    grid.innerHTML = '<div class="loading">Chargement des articles…</div>'
+
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`API error: ${res.status}`)
     const articles = await res.json()
 
     grid.innerHTML = ''
@@ -43,40 +55,71 @@ async function loadArticles() {
     }
 
     articles.forEach((article) => {
-      const imageUrl =
-        article.cover_image && isValidHttpUrl(article.cover_image)
-          ? article.cover_image
-          : FALLBACK_IMAGE
+      // Fallback image fiable
+      const fallbackImage = 'https://via.placeholder.com/300x160/2d2d2d/aaaaaa?text=No+Image'
+      let imageUrl = fallbackImage
+      if (article.cover_image && isValidHttpUrl(article.cover_image)) {
+        imageUrl = article.cover_image
+      }
 
+      const tagElements =
+        article.tag_list
+          ?.slice(0, 3)
+          .map((tag) => `<span class="card-tag">${escapeHtml(tag)}</span>`)
+          .join('') || ''
+
+      const readingTime = article.reading_time ? `${article.reading_time} min` : '5 min'
+      const authorName = escapeHtml(article.user?.name || 'Anonyme')
       const authorImage =
         article.user?.profile_image && isValidHttpUrl(article.user.profile_image)
           ? article.user.profile_image
-          : FALLBACK_AUTHOR
+          : 'https://via.placeholder.com/40x40/cccccc/666666?text=?'
 
-      const excerpt =
-        article.description || article.body_markdown?.substring(0, 120) + '…' || article.title
-
+      // Créer la card
       const card = document.createElement('div')
       card.className = 'article-card'
+
+      // Créer l'image de manière sécurisée
+      const img = document.createElement('img')
+      img.className = 'card-image'
+      img.alt = escapeHtml(article.title)
+      img.loading = 'lazy'
+
+      // Gestion d'erreur robuste
+      img.onerror = () => {
+        img.src = fallbackImage
+        img.onerror = null // Évite la boucle
+      }
+      img.src = imageUrl
+
+      // Contenu textuel
       card.innerHTML = `
-        <img class="card-image" src="${imageUrl}" alt="${escapeHtml(article.title)}" loading="lazy">
         <div class="card-content">
           <h3 class="card-title">${escapeHtml(article.title)}</h3>
-          <p class="card-excerpt">${escapeHtml(excerpt)}</p>
-          <div class="card-author">
-            <img src="${authorImage}" alt="${escapeHtml(article.user?.name || 'Auteur')}" 
-                 onerror="this.src='${FALLBACK_AUTHOR}'; this.onerror=null;">
-            <span>${escapeHtml(article.user?.name || 'Anonyme')}</span>
+          <div class="card-tags">
+            ${tagElements}
+          </div>
+          <div class="card-meta">
+            <div class="card-author">
+              <img src="${authorImage}" alt="${authorName}"
+                   onerror="this.src='https://via.placeholder.com/40x40/cccccc/666666?text=?'; this.onerror=null;">
+              <span>${authorName}</span>
+            </div>
+            <div class="card-time">
+              <span>• ${readingTime}</span>
+            </div>
           </div>
         </div>
       `
 
-      // ✅ Ouvrir dans le navigateur système via IPC (sécurisé)
+      // Insérer l'image en haut
+      card.insertBefore(img, card.firstChild)
+
+      // Clic → ouvrir l'article
       card.addEventListener('click', () => {
         if (window.electron?.ipcRenderer) {
           window.electron.ipcRenderer.send('open-external-url', article.url)
         } else {
-          // Fallback (ne devrait pas arriver)
           window.open(article.url, '_blank')
         }
       })
@@ -89,11 +132,36 @@ async function loadArticles() {
   }
 }
 
-// Initialisation
-function init() {
-  document.addEventListener('DOMContentLoaded', () => {
-    loadArticles()
+function renderTagList() {
+  const tagList = document.getElementById('tag-list')
+  if (!tagList) return
+
+  tagList.innerHTML = ''
+
+  const allItem = document.createElement('li')
+  allItem.textContent = 'Tous'
+  if (currentTag === null) allItem.classList.add('active')
+  allItem.addEventListener('click', () => {
+    currentTag = null
+    renderTagList()
+    loadArticles(null)
+  })
+  tagList.appendChild(allItem)
+
+  TAGS.forEach((tag) => {
+    const li = document.createElement('li')
+    li.textContent = `#${tag}`
+    if (currentTag === tag) li.classList.add('active')
+    li.addEventListener('click', () => {
+      currentTag = tag
+      renderTagList()
+      loadArticles(tag)
+    })
+    tagList.appendChild(li)
   })
 }
 
-init()
+document.addEventListener('DOMContentLoaded', () => {
+  renderTagList()
+  loadArticles(null)
+})

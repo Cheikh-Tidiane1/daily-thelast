@@ -13,8 +13,8 @@
         margin: 0;
         padding: 0;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background-color: #f9f9fb;
-        color: #1a1a1a;
+        background-color: #121212;
+        color: #ffffff;
         display: flex;
         height: 100vh;
         overflow: hidden;
@@ -22,46 +22,95 @@
 
       #sidebar {
         width: 240px;
-        background-color: white;
-        border-right: 1px solid #e0e0e0;
+        background-color: #1e1e1e;
+        border-right: 1px solid #333;
         padding: 20px;
         overflow-y: auto;
+      }
+
+      #sidebar h2 {
+        margin-top: 0;
+        font-size: 18px;
+        color: #ffffff;
+        font-weight: 600;
+      }
+
+      #sidebar p {
+        font-size: 14px;
+        color: #aaaaaa;
+        margin-bottom: 16px;
+      }
+
+      #tag-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #tag-list li {
+        padding: 8px 12px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #cccccc;
+      }
+
+      #tag-list li:hover {
+        background-color: #2d2d2d;
+        color: #ffffff;
+      }
+
+      #tag-list li.active {
+        background-color: #0070f3;
+        color: white;
       }
 
       #content {
         flex: 1;
         padding: 24px;
         overflow-y: auto;
-        background-color: #f9f9fb;
+        background-color: #121212;
       }
 
+      #content h1 {
+        margin-top: 0;
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+
+      /* Grille responsive */
       #articles-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 24px;
+        gap: 20px;
       }
 
+      /* Card style daily.dev */
       .article-card {
-        background: white;
+        background: #1e1e1e;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         overflow: hidden;
         cursor: pointer;
         transition:
           transform 0.2s,
           box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        position: relative;
       }
 
       .article-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
       }
 
       .card-image {
         width: 100%;
         height: 160px;
         object-fit: cover;
-        background: #eee;
+        background: #2d2d2d;
       }
 
       .card-content {
@@ -71,52 +120,78 @@
       .card-title {
         font-size: 16px;
         font-weight: 600;
-        margin: 0 0 10px;
+        margin: 0 0 8px;
         line-height: 1.4;
-      }
-
-      .card-excerpt {
-        font-size: 14px;
-        color: #666;
-        margin-bottom: 12px;
-        line-height: 1.5;
+        color: #ffffff;
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
 
-      .card-author {
-        font-size: 13px;
-        color: #888;
+      .card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 12px;
+      }
+
+      .card-tag {
+        background: #2d2d2d;
+        color: #0070f3;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .card-meta {
         display: flex;
         align-items: center;
+        font-size: 13px;
+        color: #aaaaaa;
+        margin-top: 8px;
+      }
+
+      .card-author {
+        display: flex;
+        align-items: center;
+        margin-right: 12px;
       }
 
       .card-author img {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        margin-right: 8px;
+        margin-right: 6px;
         object-fit: cover;
+      }
+
+      .card-time {
+        display: flex;
+        align-items: center;
+        margin-left: 12px;
       }
 
       .loading,
       .error {
         padding: 40px;
         text-align: center;
-        color: #777;
+        color: #aaaaaa;
       }
 
       .error {
-        color: #d32f2f;
+        color: #ff6b6b;
       }
     </style>
   </head>
   <body>
     <div id="sidebar">
-      <h2>daily.dev Clone</h2>
-      <p>Articles depuis dev.to</p>
+      <h2>Koor.dev</h2>
+      <p style="margin-bottom: 16px; color: #666; font-size: 14px">Catégories</p>
+      <ul id="tag-list" style="list-style: none; padding: 0; margin: 0">
+        <!-- Les tags seront injectés par JS -->
+      </ul>
     </div>
 
     <div id="content">
@@ -125,6 +200,6 @@
         <div class="loading">Chargement des articles…</div>
       </div>
     </div>
-<script type="module" src="./src/renderer.js"></script>
+    <script type="module" src="./src/renderer.js"></script>
   </body>
 </html>
