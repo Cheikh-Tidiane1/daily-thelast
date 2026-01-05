@@ -247,6 +247,44 @@
         fill: currentColor;
         flex-shrink: 0;
       }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 3px;
+        transition: background 0.2s;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #666;
+      }
+
+      #content::-webkit-scrollbar-thumb {
+        background: #555;
+      }
+
+      #content::-webkit-scrollbar-thumb:hover {
+        background: #777;
+      }
+
+      #sidebar::-webkit-scrollbar {
+        width: 0;
+      }
+      #sidebar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      #sidebar::-webkit-scrollbar {
+        display: none;
+      }
     </style>
   </head>
   <body>
