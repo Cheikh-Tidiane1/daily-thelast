@@ -1,4 +1,4 @@
-// src/renderer/main.js
+
 const ICONS = {
   all: `<svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`,
   javascript: `<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm10.5 13.5h3v-9h-3v9zm-4.5 0V12H6v4.5h3z"/></svg>`,
@@ -27,10 +27,69 @@ const TAGS = [
 let currentTag = null
 let currentPage = 1
 let isLoading = false
-let hasMore = true // suppose qu’il y a plus au départ
+let hasMore = true
 
 const fallbackImage = 'https://via.placeholder.com/300x160/2d2d2d/aaaaaa?text=No+Image'
 const fallbackAuthor = 'https://via.placeholder.com/40x40/cccccc/666666?text=?'
+
+// Fonction pour générer une image de fallback basée sur le titre et les tags
+function generateFallbackImage(article) {
+  // Créer une image SVG personnalisée avec le titre
+  const title = article.title.substring(0, 60) + (article.title.length > 60 ? '...' : '')
+  const firstTag = article.tag_list && article.tag_list[0] ? article.tag_list[0] : 'article'
+
+  // Couleurs basées sur le tag
+  const colors = {
+    javascript: { bg: '#f7df1e', text: '#000' },
+    python: { bg: '#3776ab', text: '#fff' },
+    react: { bg: '#61dafb', text: '#000' },
+    webdev: { bg: '#4a90e2', text: '#fff' },
+    rust: { bg: '#ce422b', text: '#fff' },
+    ai: { bg: '#9b59b6', text: '#fff' },
+    tutorial: { bg: '#27ae60', text: '#fff' },
+    default: { bg: '#2d3748', text: '#fff' }
+  }
+
+  const color = colors[firstTag] || colors.default
+
+  const svg = `
+    <svg width="300" height="160" xmlns="http://www.w3.org/2000/svg">
+      <rect width="300" height="160" fill="${color.bg}"/>
+      <foreignObject width="280" height="140" x="10" y="10">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+          box-sizing: border-box;
+          font-family: Arial, sans-serif;
+        ">
+          <div style="
+            color: ${color.text};
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.4;
+            margin-bottom: 10px;
+          ">${escapeHtml(title)}</div>
+          <div style="
+            color: ${color.text};
+            opacity: 0.8;
+            font-size: 12px;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+          ">#${escapeHtml(firstTag)}</div>
+        </div>
+      </foreignObject>
+    </svg>
+  `
+
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`
+}
 
 function escapeHtml(unsafe) {
   if (typeof unsafe !== 'string') return ''
@@ -51,7 +110,6 @@ function isValidHttpUrl(string) {
   }
 }
 
-// Charger les articles (remplace ou ajoute selon reset)
 async function loadArticles(tag = null, page = 1, reset = true) {
   const grid = document.getElementById('articles-grid')
   const content = document.getElementById('content')
@@ -88,12 +146,15 @@ async function loadArticles(tag = null, page = 1, reset = true) {
       return
     }
 
-    // Ajouter chaque article
     articles.forEach((article) => {
-      const imageUrl =
-        article.cover_image && isValidHttpUrl(article.cover_image)
-          ? article.cover_image
-          : fallbackImage
+      // Si pas d'image, générer une image personnalisée basée sur le titre
+      let imageUrl
+      if (article.cover_image && isValidHttpUrl(article.cover_image)) {
+        imageUrl = article.cover_image
+      } else {
+        // Créer une image SVG personnalisée au lieu du placeholder générique
+        imageUrl = generateFallbackImage(article)
+      }
 
       const tagElements =
         article.tag_list
@@ -116,9 +177,12 @@ async function loadArticles(tag = null, page = 1, reset = true) {
       img.alt = escapeHtml(article.title)
       img.loading = 'lazy'
       img.src = imageUrl
+      // En cas d'échec de la capture, revenir au placeholder
       img.onerror = () => {
-        img.src = fallbackImage
-        img.onerror = null
+        if (img.src !== fallbackImage) {
+          img.src = fallbackImage
+          img.onerror = null
+        }
       }
 
       card.innerHTML = `
@@ -148,13 +212,11 @@ async function loadArticles(tag = null, page = 1, reset = true) {
       grid.appendChild(card)
     })
 
-    // Si on a moins de 30 articles, c’est la fin
     if (articles.length < 30) {
       hasMore = false
     }
 
     if (hasMore && !reset) {
-      // Ajouter un indicateur de chargement en bas
       const loader = document.createElement('div')
       loader.className = 'loading'
       loader.style.gridColumn = '1 / -1'
@@ -162,7 +224,6 @@ async function loadArticles(tag = null, page = 1, reset = true) {
       loader.id = 'infinite-loader'
       grid.appendChild(loader)
     } else if (!hasMore) {
-      // Fin du flux
       const end = document.createElement('div')
       end.style.gridColumn = '1 / -1'
       end.style.textAlign = 'center'
@@ -179,20 +240,17 @@ async function loadArticles(tag = null, page = 1, reset = true) {
     }
   } finally {
     isLoading = false
-    // Supprimer l’ancien loader si présent
     const loader = document.getElementById('infinite-loader')
     if (loader) loader.remove()
   }
 }
 
-// Charger plus d’articles
 function loadMoreArticles() {
   if (isLoading || !hasMore) return
   currentPage++
   loadArticles(currentTag, currentPage, false)
 }
 
-// Gérer le scroll infini
 function setupInfiniteScroll() {
   const content = document.getElementById('content')
   if (!content) return
@@ -204,7 +262,6 @@ function setupInfiniteScroll() {
       requestAnimationFrame(() => {
         const { scrollTop, scrollHeight, clientHeight } = content
         if (scrollTop + clientHeight >= scrollHeight - 200) {
-          // À 200px de la fin → charger plus
           loadMoreArticles()
         }
         ticking = false
@@ -222,7 +279,6 @@ function renderTagList() {
 
   tagList.innerHTML = ''
 
-  // "Tous"
   const allItem = document.createElement('li')
   allItem.innerHTML = `${ICONS.all} Tous`
   if (currentTag === null) allItem.classList.add('active')
@@ -233,9 +289,8 @@ function renderTagList() {
   })
   tagList.appendChild(allItem)
 
-  // Tags avec icônes
   TAGS.forEach((tag) => {
-    const icon = ICONS[tag] || ICONS.tutorial // fallback
+    const icon = ICONS[tag] || ICONS.tutorial
     const li = document.createElement('li')
     li.innerHTML = `${icon} #${tag}`
     if (currentTag === tag) li.classList.add('active')
@@ -248,7 +303,6 @@ function renderTagList() {
   })
 }
 
-// Initialisation
 document.addEventListener('DOMContentLoaded', () => {
   renderTagList()
   loadArticles(null, 1, true)
