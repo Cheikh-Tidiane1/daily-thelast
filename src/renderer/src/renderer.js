@@ -1,4 +1,4 @@
-
+// === ICÔNES POUR LA SIDEBAR ===
 const ICONS = {
   all: `<svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`,
   javascript: `<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm10.5 13.5h3v-9h-3v9zm-4.5 0V12H6v4.5h3z"/></svg>`,
@@ -12,7 +12,9 @@ const ICONS = {
   beginners: `<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>`,
   tutorial: `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>`
 }
-const TAGS = [
+
+// Tags par défaut (non utilisés pour la sélection initiale)
+const DEFAULT_TAGS = [
   'javascript',
   'python',
   'webdev',
@@ -24,73 +26,28 @@ const TAGS = [
   'beginners',
   'tutorial'
 ]
+
+// Variable dynamique
+let TAGS = [...DEFAULT_TAGS]
+const savedTags = localStorage.getItem('userTags')
+if (savedTags) {
+  try {
+    const parsed = JSON.parse(savedTags)
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      TAGS = parsed
+    }
+  } catch (e) {
+    console.warn('Invalid saved tags', e)
+  }
+}
+
 let currentTag = null
 let currentPage = 1
 let isLoading = false
 let hasMore = true
-
-const fallbackImage = 'https://via.placeholder.com/300x160/2d2d2d/aaaaaa?text=No+Image'
 const fallbackAuthor = 'https://via.placeholder.com/40x40/cccccc/666666?text=?'
 
-// Fonction pour générer une image de fallback basée sur le titre et les tags
-function generateFallbackImage(article) {
-  // Créer une image SVG personnalisée avec le titre
-  const title = article.title.substring(0, 60) + (article.title.length > 60 ? '...' : '')
-  const firstTag = article.tag_list && article.tag_list[0] ? article.tag_list[0] : 'article'
-
-  // Couleurs basées sur le tag
-  const colors = {
-    javascript: { bg: '#f7df1e', text: '#000' },
-    python: { bg: '#3776ab', text: '#fff' },
-    react: { bg: '#61dafb', text: '#000' },
-    webdev: { bg: '#4a90e2', text: '#fff' },
-    rust: { bg: '#ce422b', text: '#fff' },
-    ai: { bg: '#9b59b6', text: '#fff' },
-    tutorial: { bg: '#27ae60', text: '#fff' },
-    default: { bg: '#2d3748', text: '#fff' }
-  }
-
-  const color = colors[firstTag] || colors.default
-
-  const svg = `
-    <svg width="300" height="160" xmlns="http://www.w3.org/2000/svg">
-      <rect width="300" height="160" fill="${color.bg}"/>
-      <foreignObject width="280" height="140" x="10" y="10">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="
-          width: 100%;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          padding: 20px;
-          box-sizing: border-box;
-          font-family: Arial, sans-serif;
-        ">
-          <div style="
-            color: ${color.text};
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            line-height: 1.4;
-            margin-bottom: 10px;
-          ">${escapeHtml(title)}</div>
-          <div style="
-            color: ${color.text};
-            opacity: 0.8;
-            font-size: 12px;
-            background: rgba(0,0,0,0.2);
-            padding: 4px 12px;
-            border-radius: 12px;
-          ">#${escapeHtml(firstTag)}</div>
-        </div>
-      </foreignObject>
-    </svg>
-  `
-
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`
-}
-
+// === UTILITAIRES ===
 function escapeHtml(unsafe) {
   if (typeof unsafe !== 'string') return ''
   return unsafe
@@ -110,34 +67,80 @@ function isValidHttpUrl(string) {
   }
 }
 
+function generateFallbackImage(article) {
+  const title = article.title.substring(0, 60) + (article.title.length > 60 ? '...' : '')
+  const firstTag = article.tag_list && article.tag_list[0] ? article.tag_list[0] : 'article'
+  const colors = {
+    javascript: { bg: '#f7df1e', text: '#000' },
+    python: { bg: '#3776ab', text: '#fff' },
+    react: { bg: '#61dafb', text: '#000' },
+    webdev: { bg: '#4a90e2', text: '#fff' },
+    rust: { bg: '#ce422b', text: '#fff' },
+    ai: { bg: '#9b59b6', text: '#fff' },
+    tutorial: { bg: '#27ae60', text: '#fff' },
+    default: { bg: '#2d3748', text: '#fff' }
+  }
+  const color = colors[firstTag] || colors.default
+  const svg = `
+<svg width="300" height="160" xmlns="http://www.w3.org/2000/svg">
+<rect width="300" height="160" fill="${color.bg}"/>
+<foreignObject width="280" height="140" x="10" y="10">
+<div xmlns="http://www.w3.org/1999/xhtml" style="
+width: 100%;
+height: 100%;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 20px;
+box-sizing: border-box;
+font-family: Arial, sans-serif;
+">
+<div style="
+color: ${color.text};
+font-size: 16px;
+font-weight: bold;
+text-align: center;
+line-height: 1.4;
+margin-bottom: 10px;
+">${escapeHtml(title)}</div>
+<div style="
+color: ${color.text};
+opacity: 0.8;
+font-size: 12px;
+background: rgba(0,0,0,0.2);
+padding: 4px 12px;
+border-radius: 12px;
+">#${escapeHtml(firstTag)}</div>
+</div>
+</foreignObject>
+</svg>
+`
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`
+}
+
+// === FONCTIONS PRINCIPALES ===
 async function loadArticles(tag = null, page = 1, reset = true) {
   const grid = document.getElementById('articles-grid')
   const content = document.getElementById('content')
   if (!grid || !content) return
-
   if (isLoading) return
   if (!hasMore && !reset) return
-
   isLoading = true
-
   try {
     let url = `https://dev.to/api/articles?per_page=30&page=${page}`
     if (tag) url += `&tag=${encodeURIComponent(tag)}`
-
     if (reset) {
       grid.innerHTML = '<div class="loading">Chargement…</div>'
       currentPage = 1
       hasMore = true
     }
-
     const res = await fetch(url)
     if (!res.ok) throw new Error(`API error: ${res.status}`)
     const articles = await res.json()
-
     if (reset) {
       grid.innerHTML = ''
     }
-
     if (articles.length === 0) {
       hasMore = false
       if (reset) {
@@ -145,46 +148,38 @@ async function loadArticles(tag = null, page = 1, reset = true) {
       }
       return
     }
-
     articles.forEach((article) => {
-      // Si pas d'image, générer une image personnalisée basée sur le titre
       let imageUrl
       if (article.cover_image && isValidHttpUrl(article.cover_image)) {
         imageUrl = article.cover_image
       } else {
-        // Créer une image SVG personnalisée au lieu du placeholder générique
         imageUrl = generateFallbackImage(article)
       }
-
       const tagElements =
         article.tag_list
           ?.slice(0, 3)
           .map((tag) => `<span class="card-tag">${escapeHtml(tag)}</span>`)
           .join('') || ''
-
       const readingTime = article.reading_time ? `${article.reading_time} min` : '5 min'
       const authorName = escapeHtml(article.user?.name || 'Anonyme')
       const authorImage =
         article.user?.profile_image && isValidHttpUrl(article.user.profile_image)
           ? article.user.profile_image
           : fallbackAuthor
-
       const card = document.createElement('div')
       card.className = 'article-card'
-
       const img = document.createElement('img')
       img.className = 'card-image'
       img.alt = escapeHtml(article.title)
       img.loading = 'lazy'
       img.src = imageUrl
-      // En cas d'échec de la capture, revenir au placeholder
       img.onerror = () => {
-        if (img.src !== fallbackImage) {
-          img.src = fallbackImage
+        const fallback = 'https://via.placeholder.com/300x160/2d2d2d/aaaaaa?text=No+Image'
+        if (img.src !== fallback) {
+          img.src = fallback
           img.onerror = null
         }
       }
-
       card.innerHTML = `
         <div class="card-content">
           <h3 class="card-title">${escapeHtml(article.title)}</h3>
@@ -200,7 +195,6 @@ async function loadArticles(tag = null, page = 1, reset = true) {
         </div>
       `
       card.insertBefore(img, card.firstChild)
-
       card.addEventListener('click', () => {
         if (window.electron?.ipcRenderer) {
           window.electron.ipcRenderer.send('open-external-url', article.url)
@@ -208,14 +202,11 @@ async function loadArticles(tag = null, page = 1, reset = true) {
           window.open(article.url, '_blank')
         }
       })
-
       grid.appendChild(card)
     })
-
     if (articles.length < 30) {
       hasMore = false
     }
-
     if (hasMore && !reset) {
       const loader = document.createElement('div')
       loader.className = 'loading'
@@ -235,8 +226,7 @@ async function loadArticles(tag = null, page = 1, reset = true) {
   } catch (err) {
     console.error('Erreur chargement articles:', err)
     if (reset) {
-      document.getElementById('articles-grid').innerHTML =
-        `<div class="error">❌ Échec du chargement.<br>${err.message}</div>`
+      grid.innerHTML = `<div class="error">❌ Échec du chargement.<br>${err.message}</div>`
     }
   } finally {
     isLoading = false
@@ -254,9 +244,7 @@ function loadMoreArticles() {
 function setupInfiniteScroll() {
   const content = document.getElementById('content')
   if (!content) return
-
   let ticking = false
-
   const onScroll = () => {
     if (!ticking) {
       requestAnimationFrame(() => {
@@ -269,16 +257,13 @@ function setupInfiniteScroll() {
       ticking = true
     }
   }
-
   content.addEventListener('scroll', onScroll, { passive: true })
 }
 
 function renderTagList() {
   const tagList = document.getElementById('tag-list')
   if (!tagList) return
-
   tagList.innerHTML = ''
-
   const allItem = document.createElement('li')
   allItem.innerHTML = `${ICONS.all} Tous`
   if (currentTag === null) allItem.classList.add('active')
@@ -288,7 +273,6 @@ function renderTagList() {
     loadArticles(null, 1, true)
   })
   tagList.appendChild(allItem)
-
   TAGS.forEach((tag) => {
     const icon = ICONS[tag] || ICONS.tutorial
     const li = document.createElement('li')
@@ -303,8 +287,111 @@ function renderTagList() {
   })
 }
 
+// === FONCTION RÉUTILISABLE POUR L'ONBOARDING ===
+function showOnboarding(initialTags = []) {
+  const onboardingEl = document.getElementById('onboarding')
+  onboardingEl.style.display = 'flex'
+
+  const searchInput = document.getElementById('searchInput')
+  const tagsContainer = document.getElementById('tagsContainer')
+  const nextBtn = document.getElementById('nextBtn')
+  let selectedTags = [...initialTags]
+
+  const ALL_AVAILABLE_TAGS = [
+    'data-science',
+    'ai',
+    'database',
+    'elixir',
+    'architecture',
+    'cloud',
+    'devops',
+    'crypto',
+    'java',
+    'golang',
+    'gaming',
+    'javascript',
+    'machine-learning',
+    'mobile',
+    '.net',
+    'open-source',
+    'react',
+    'python',
+    'ruby',
+    'rust',
+    'security',
+    'testing',
+    'tech-news',
+    'tools',
+    'webdev',
+    'github',
+    'beginners',
+    'tutorial'
+  ]
+
+  function renderOnboardingTags(filter = '') {
+    tagsContainer.innerHTML = ''
+    const filtered = ALL_AVAILABLE_TAGS.filter((tag) =>
+      tag.toLowerCase().includes(filter.toLowerCase())
+    )
+    filtered.forEach((tag) => {
+      const btn = document.createElement('button')
+      btn.textContent = tag
+      btn.style.padding = '8px 16px'
+      btn.style.borderRadius = '20px'
+      btn.style.background = selectedTags.includes(tag) ? '#0070f3' : '#2d2d2d'
+      btn.style.color = selectedTags.includes(tag) ? 'white' : '#cccccc'
+      btn.style.border = selectedTags.includes(tag) ? '1px solid #0056b3' : '1px solid transparent'
+      btn.style.cursor = 'pointer'
+      btn.onclick = () => {
+        const idx = selectedTags.indexOf(tag)
+        if (idx === -1) {
+          selectedTags.push(tag)
+        } else {
+          selectedTags.splice(idx, 1)
+        }
+        renderOnboardingTags(filter)
+        nextBtn.disabled = selectedTags.length === 0
+      }
+      tagsContainer.appendChild(btn)
+    })
+  }
+
+  renderOnboardingTags()
+  nextBtn.disabled = selectedTags.length === 0
+
+  searchInput.addEventListener('input', (e) => {
+    renderOnboardingTags(e.target.value)
+  })
+
+  const handleNext = () => {
+    localStorage.setItem('userTags', JSON.stringify(selectedTags))
+    TAGS = selectedTags
+    onboardingEl.style.display = 'none'
+    renderTagList()
+    loadArticles(null, 1, true)
+    setupInfiniteScroll()
+    nextBtn.removeEventListener('click', handleNext)
+  }
+
+  nextBtn.addEventListener('click', handleNext)
+}
+
+// === DÉMARRAGE ===
 document.addEventListener('DOMContentLoaded', () => {
-  renderTagList()
-  loadArticles(null, 1, true)
-  setupInfiniteScroll()
+  const hasUserTags = localStorage.getItem('userTags') !== null
+
+  if (hasUserTags) {
+    renderTagList()
+    loadArticles(null, 1, true)
+    setupInfiniteScroll()
+
+    const editBtn = document.getElementById('editTagsBtn')
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        showOnboarding([...TAGS])
+      })
+    }
+  } else {
+    showOnboarding([])
+  }
 })
