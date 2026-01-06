@@ -11,59 +11,68 @@ const ICONS = {
   github: `<svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.167 6.839 9.497.5.09.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.605-3.369-1.34-3.369-1.34-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.203 2.394.1 2.647.64.699 1.029 1.592 1.029 2.683 0 3.843-2.339 4.687-4.566 4.935.359.31.678.92.678 1.854 0 1.336-.012 2.415-.012 2.743 0 .267.18.577.688.479C19.139 20.163 22 16.42 22 12c0-5.523-4.477-10-10-10z"/></svg>`,
   beginners: `<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>`,
   tutorial: `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>`
-};
+}
 
 const DEFAULT_TAGS = [
-  'javascript', 'python', 'webdev', 'devops', 'react', 'rust', 'ai', 'github', 'beginners', 'tutorial'
-];
+  'javascript',
+  'python',
+  'webdev',
+  'devops',
+  'react',
+  'rust',
+  'ai',
+  'github',
+  'beginners',
+  'tutorial'
+]
 
 // === ÉTAT GLOBAL ===
-let TAGS = [...DEFAULT_TAGS];
-const savedTags = localStorage.getItem('userTags');
+let TAGS = [...DEFAULT_TAGS]
+const savedTags = localStorage.getItem('userTags')
 if (savedTags) {
   try {
-    const parsed = JSON.parse(savedTags);
+    const parsed = JSON.parse(savedTags)
     if (Array.isArray(parsed) && parsed.length > 0) {
-      TAGS = parsed;
+      TAGS = parsed
     }
   } catch (e) {
-    console.warn('Invalid saved tags', e);
+    console.warn('Invalid saved tags', e)
   }
 }
 
-let currentTag = null;
-let currentSearchQuery = null;
-let currentPage = 1;
-let isLoading = false;
-let hasMore = true;
+let currentTag = null
+let currentSearchQuery = null
+let currentPage = 1
+let isLoading = false
+let hasMore = true
 
 // ✅ Bien définir LES DEUX fallbacks
-const fallbackImage = 'https://via.placeholder.com/300x160/2d2d2d/aaaaaa?text=No+Image';
-const fallbackAuthor = 'https://via.placeholder.com/40x40/cccccc/666666?text=?';
+const fallbackImage = 'https://via.placeholder.com/300x160/2d2d2d/aaaaaa?text=No+Image'
+const fallbackAuthor = 'https://via.placeholder.com/40x40/cccccc/666666?text=?'
 
 // === UTILITAIRES ===
 function escapeHtml(unsafe) {
-  if (typeof unsafe !== 'string') return '';
+  if (typeof unsafe !== 'string') return ''
   return unsafe
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/'/g, '&#039;')
 }
 
 function isValidHttpUrl(string) {
   try {
-    const url = new URL(string);
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    const url = new URL(string)
+    return url.protocol === 'http:' || url.protocol === 'https:'
   } catch (_) {
-    return false;
+    return false
   }
 }
 
 function generateFallbackImage(article) {
-  const title = article.title.substring(0, 60) + (article.title.length > 60 ? '...' : '');
-  const firstTag = article.tag_list && article.tag_list[0] ? article.tag_list[0] : 'article';
+  const title = article.title.substring(0, 60) + (article.title.length > 60 ? '...' : '')
+  const firstTag = article.tag_list && article.tag_list[0] ? article.tag_list[0] : 'article'
   const colors = {
     javascript: { bg: '#f7df1e', text: '#000' },
     python: { bg: '#3776ab', text: '#fff' },
@@ -73,8 +82,8 @@ function generateFallbackImage(article) {
     ai: { bg: '#9b59b6', text: '#fff' },
     tutorial: { bg: '#27ae60', text: '#fff' },
     default: { bg: '#2d3748', text: '#fff' }
-  };
-  const color = colors[firstTag] || colors.default;
+  }
+  const color = colors[firstTag] || colors.default
   const svg = `
 <svg width="300" height="160" xmlns="http://www.w3.org/2000/svg">
 <rect width="300" height="160" fill="${color.bg}"/>
@@ -109,87 +118,90 @@ border-radius: 12px;
 </div>
 </foreignObject>
 </svg>
-`;
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+`
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`
 }
 
 async function loadArticles(tag = null, page = 1, reset = true) {
-  const grid = document.getElementById('articles-grid');
-  const content = document.getElementById('content');
-  const titleEl = document.querySelector('#content h1');
-  if (!grid || !content) return;
+  const grid = document.getElementById('articles-grid')
+  const content = document.getElementById('content')
+  const titleEl = document.querySelector('#content h1')
+  if (!grid || !content) return
 
-  if (isLoading) return;
-  if (!hasMore && !reset) return;
-  isLoading = true;
+  if (isLoading) return
+  if (!hasMore && !reset) return
+  isLoading = true
 
   // Mettre à jour le titre
   if (titleEl) {
     if (currentSearchQuery) {
-      titleEl.textContent = `Résultats pour "${currentSearchQuery}"`;
+      titleEl.textContent = `Résultats pour "${currentSearchQuery}"`
     } else if (currentTag) {
-      titleEl.textContent = `#${currentTag}`;
+      titleEl.textContent = `#${currentTag}`
     } else {
-      titleEl.textContent = 'Koor Dev Daily';
+      titleEl.textContent = 'Koor Dev Daily'
     }
   }
 
   try {
-    let url = `https://dev.to/api/articles?per_page=30&page=${page}`;
-    if (tag) url += `&tag=${encodeURIComponent(tag)}`;
+    let url = `https://dev.to/api/articles?per_page=30&page=${page}`
+    if (tag) url += `&tag=${encodeURIComponent(tag)}`
 
     if (reset) {
-      grid.innerHTML = '<div class="loading">Chargement…</div>';
-      currentPage = 1;
-      hasMore = true;
+      grid.innerHTML = '<div class="loading">Chargement…</div>'
+      currentPage = 1
+      hasMore = true
     }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const articles = await res.json();
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`API error: ${res.status}`)
+    const articles = await res.json()
 
-    if (reset) grid.innerHTML = '';
+    if (reset) grid.innerHTML = ''
 
     if (articles.length === 0) {
-      hasMore = false;
+      hasMore = false
       if (reset) {
-        grid.innerHTML = '<div class="error">Aucun article trouvé pour ce tag.</div>';
+        grid.innerHTML = '<div class="error">Aucun article trouvé pour ce tag.</div>'
       }
-      return;
+      return
     }
 
-    articles.forEach(article => {
-      let imageUrl;
+    articles.forEach((article) => {
+      let imageUrl
       if (article.cover_image && isValidHttpUrl(article.cover_image)) {
-        imageUrl = article.cover_image;
+        imageUrl = article.cover_image
       } else {
-        imageUrl = generateFallbackImage(article);
+        imageUrl = generateFallbackImage(article)
       }
 
-      const tagElements = article.tag_list?.slice(0, 3).map(tag =>
-        `<span class="card-tag">${escapeHtml(tag)}</span>`
-      ).join('') || '';
+      const tagElements =
+        article.tag_list
+          ?.slice(0, 3)
+          .map((tag) => `<span class="card-tag">${escapeHtml(tag)}</span>`)
+          .join('') || ''
 
-      const readingTime = article.reading_time ? `${article.reading_time} min` : '5 min';
-      const authorName = escapeHtml(article.user?.name || 'Anonyme');
-      const authorImage = article.user?.profile_image && isValidHttpUrl(article.user.profile_image)
-        ? article.user.profile_image
-        : fallbackAuthor;
+      const readingTime = article.reading_time ? `${article.reading_time} min` : '5 min'
+      const authorName = escapeHtml(article.user?.name || 'Anonyme')
+      const authorImage =
+        article.user?.profile_image && isValidHttpUrl(article.user.profile_image)
+          ? article.user.profile_image
+          : fallbackAuthor
 
-      const card = document.createElement('div');
-      card.className = 'article-card';
+      const card = document.createElement('div')
+      card.className = 'article-card'
 
-      const img = document.createElement('img');
-      img.className = 'card-image';
-      img.alt = escapeHtml(article.title);
-      img.loading = 'lazy';
-      img.src = imageUrl;
+      const img = document.createElement('img')
+      img.className = 'card-image'
+      img.alt = escapeHtml(article.title)
+      img.loading = 'lazy'
+      img.src = imageUrl
       img.onerror = () => {
         if (img.src !== fallbackImage) {
-          img.src = fallbackImage;
-          img.onerror = null;
+          img.src = fallbackImage
+          img.onerror = null
         }
-      };
+      }
 
       card.innerHTML = `
         <div class="card-content">
@@ -204,248 +216,273 @@ async function loadArticles(tag = null, page = 1, reset = true) {
             <div class="card-time"><span>• ${readingTime}</span></div>
           </div>
         </div>
-      `;
-      card.insertBefore(img, card.firstChild);
+      `
+      card.insertBefore(img, card.firstChild)
 
       card.addEventListener('click', () => {
         if (window.electron?.ipcRenderer) {
-          window.electron.ipcRenderer.send('open-external-url', article.url);
+          window.electron.ipcRenderer.send('open-article-window', article.url)
         } else {
-          window.open(article.url, '_blank');
+          // Fallback : ouvrir dans le navigateur (dev only)
+          window.open(article.url, '_blank')
         }
-      });
+      })
 
-      grid.appendChild(card);
-    });
+      grid.appendChild(card)
+    })
 
-    if (articles.length < 30) hasMore = false;
+    if (articles.length < 30) hasMore = false
 
     if (hasMore && !reset) {
-      const loader = document.createElement('div');
-      loader.className = 'loading';
-      loader.style.gridColumn = '1 / -1';
-      loader.textContent = 'Chargement…';
-      loader.id = 'infinite-loader';
-      grid.appendChild(loader);
+      const loader = document.createElement('div')
+      loader.className = 'loading'
+      loader.style.gridColumn = '1 / -1'
+      loader.textContent = 'Chargement…'
+      loader.id = 'infinite-loader'
+      grid.appendChild(loader)
     } else if (!hasMore) {
-      const end = document.createElement('div');
-      end.style.gridColumn = '1 / -1';
-      end.style.textAlign = 'center';
-      end.style.color = '#666';
-      end.style.padding = '20px';
-      end.textContent = '🔚 Fin du flux';
-      grid.appendChild(end);
+      const end = document.createElement('div')
+      end.style.gridColumn = '1 / -1'
+      end.style.textAlign = 'center'
+      end.style.color = '#666'
+      end.style.padding = '20px'
+      end.textContent = '🔚 Fin du flux'
+      grid.appendChild(end)
     }
   } catch (err) {
-    console.error('Erreur chargement articles:', err);
+    console.error('Erreur chargement articles:', err)
     if (reset) {
-      grid.innerHTML = `<div class="error">❌ Échec du chargement.<br>${err.message}</div>`;
+      grid.innerHTML = `<div class="error">❌ Échec du chargement.<br>${err.message}</div>`
     }
   } finally {
-    isLoading = false;
-    const loader = document.getElementById('infinite-loader');
-    if (loader) loader.remove();
+    isLoading = false
+    const loader = document.getElementById('infinite-loader')
+    if (loader) loader.remove()
   }
 }
 
 // === SCROLL INFINI ===
 function loadMoreArticles() {
-  if (isLoading || !hasMore) return;
-  currentPage++;
-  loadArticles(currentTag, currentPage, false);
+  if (isLoading || !hasMore) return
+  currentPage++
+  loadArticles(currentTag, currentPage, false)
 }
 
 function setupInfiniteScroll() {
-  const content = document.getElementById('content');
-  if (!content) return;
-  let ticking = false;
+  const content = document.getElementById('content')
+  if (!content) return
+  let ticking = false
   const onScroll = () => {
     if (!ticking) {
       requestAnimationFrame(() => {
-        const { scrollTop, scrollHeight, clientHeight } = content;
+        const { scrollTop, scrollHeight, clientHeight } = content
         if (scrollTop + clientHeight >= scrollHeight - 200) {
-          loadMoreArticles();
+          loadMoreArticles()
         }
-        ticking = false;
-      });
-      ticking = true;
+        ticking = false
+      })
+      ticking = true
     }
-  };
-  content.addEventListener('scroll', onScroll, { passive: true });
+  }
+  content.addEventListener('scroll', onScroll, { passive: true })
 }
 
 // === RECHERCHE ===
 function setupSearchBar() {
-  const searchBar = document.getElementById('searchBar');
-  if (!searchBar) return;
+  const searchBar = document.getElementById('searchBar')
+  if (!searchBar) return
 
-  let searchTimeout = null;
+  let searchTimeout = null
 
   searchBar.addEventListener('input', (e) => {
-    const rawQuery = e.target.value.trim();
-    if (searchTimeout) clearTimeout(searchTimeout);
+    const rawQuery = e.target.value.trim()
+    if (searchTimeout) clearTimeout(searchTimeout)
 
     searchTimeout = setTimeout(() => {
       if (!rawQuery) {
         // Pas de recherche → flux général
-        currentSearchQuery = null;
-        currentTag = null;
-        renderTagList();
-        loadArticles(null, 1, true);
-        return;
+        currentSearchQuery = null
+        currentTag = null
+        renderTagList()
+        loadArticles(null, 1, true)
+        return
       }
 
       // Nettoyer le texte pour en faire un tag plausible
       // Ex: "Spring Boot" → "spring"
       // On prend le premier mot, on le met en minuscules, on retire les caractères spéciaux
-      const firstWord = rawQuery.split(/\s+/)[0].toLowerCase();
-      const cleanedTag = firstWord.replace(/[^a-z0-9]/g, '');
+      const firstWord = rawQuery.split(/\s+/)[0].toLowerCase()
+      const cleanedTag = firstWord.replace(/[^a-z0-9]/g, '')
 
       // Si le tag est vide, on ne fait rien
       if (!cleanedTag) {
-        currentSearchQuery = null;
-        currentTag = null;
-        renderTagList();
-        loadArticles(null, 1, true);
-        return;
+        currentSearchQuery = null
+        currentTag = null
+        renderTagList()
+        loadArticles(null, 1, true)
+        return
       }
 
       // Utiliser ce tag comme filtre
-      currentSearchQuery = rawQuery; // pour l'affichage du titre
-      currentTag = cleanedTag;       // pour l'API
-      renderTagList();
-      loadArticles(cleanedTag, 1, true);
-    }, 500);
-  });
+      currentSearchQuery = rawQuery // pour l'affichage du titre
+      currentTag = cleanedTag // pour l'API
+      renderTagList()
+      loadArticles(cleanedTag, 1, true)
+    }, 500)
+  })
 }
 
 // === SIDEBAR ===
 function renderTagList() {
-  const tagList = document.getElementById('tag-list');
-  if (!tagList) return;
-  tagList.innerHTML = '';
+  const tagList = document.getElementById('tag-list')
+  if (!tagList) return
+  tagList.innerHTML = ''
 
-  const isSearchMode = currentSearchQuery !== null;
+  const isSearchMode = currentSearchQuery !== null
 
-  const allItem = document.createElement('li');
-  allItem.innerHTML = `${ICONS.all} Tous`;
-  if (currentTag === null && !isSearchMode) allItem.classList.add('active');
+  const allItem = document.createElement('li')
+  allItem.innerHTML = `${ICONS.all} Tous`
+  if (currentTag === null && !isSearchMode) allItem.classList.add('active')
   if (!isSearchMode) {
     allItem.addEventListener('click', () => {
-      currentTag = null;
-      currentSearchQuery = null;
-      const searchBar = document.getElementById('searchBar');
-      if (searchBar) searchBar.value = '';
-      renderTagList();
-      loadArticles(null, 1, true);
-    });
+      currentTag = null
+      currentSearchQuery = null
+      const searchBar = document.getElementById('searchBar')
+      if (searchBar) searchBar.value = ''
+      renderTagList()
+      loadArticles(null, 1, true)
+    })
   }
-  tagList.appendChild(allItem);
+  tagList.appendChild(allItem)
 
-  TAGS.forEach(tag => {
-    const icon = ICONS[tag] || ICONS.tutorial;
-    const li = document.createElement('li');
-    li.innerHTML = `${icon} #${tag}`;
-    if (currentTag === tag && !isSearchMode) li.classList.add('active');
+  TAGS.forEach((tag) => {
+    const icon = ICONS[tag] || ICONS.tutorial
+    const li = document.createElement('li')
+    li.innerHTML = `${icon} #${tag}`
+    if (currentTag === tag && !isSearchMode) li.classList.add('active')
     if (!isSearchMode) {
       li.addEventListener('click', () => {
-        currentTag = tag;
-        currentSearchQuery = null;
-        const searchBar = document.getElementById('searchBar');
-        if (searchBar) searchBar.value = '';
-        renderTagList();
-        loadArticles(tag, 1, true);
-      });
+        currentTag = tag
+        currentSearchQuery = null
+        const searchBar = document.getElementById('searchBar')
+        if (searchBar) searchBar.value = ''
+        renderTagList()
+        loadArticles(tag, 1, true)
+      })
     }
-    tagList.appendChild(li);
-  });
+    tagList.appendChild(li)
+  })
 
   // ✅ Bouton "Modifier les tags" fonctionnel dès la 1ère fois
-  const editBtn = document.getElementById('editTagsBtn');
+  const editBtn = document.getElementById('editTagsBtn')
   if (editBtn && !editBtn._initialized) {
     editBtn.onclick = () => {
-      showOnboarding([...TAGS]);
-    };
-    editBtn._initialized = true;
+      showOnboarding([...TAGS])
+    }
+    editBtn._initialized = true
   }
 }
 
 // === ONBOARDING ===
 function showOnboarding(initialTags = []) {
-  const onboardingEl = document.getElementById('onboarding');
-  onboardingEl.style.display = 'flex';
+  const onboardingEl = document.getElementById('onboarding')
+  onboardingEl.style.display = 'flex'
 
-  const searchInput = document.getElementById('searchInput');
-  const tagsContainer = document.getElementById('tagsContainer');
-  const nextBtn = document.getElementById('nextBtn');
-  let selectedTags = [...initialTags];
+  const searchInput = document.getElementById('searchInput')
+  const tagsContainer = document.getElementById('tagsContainer')
+  const nextBtn = document.getElementById('nextBtn')
+  let selectedTags = [...initialTags]
 
   const ALL_AVAILABLE_TAGS = [
-    'data-science', 'ai', 'database', 'elixir', 'architecture', 'cloud', 'devops', 'crypto',
-    'java', 'golang', 'gaming', 'javascript', 'machine-learning', 'mobile', '.net',
-    'open-source', 'react', 'python', 'ruby', 'rust', 'security', 'testing', 'tech-news',
-    'tools', 'webdev', 'github', 'beginners', 'tutorial'
-  ];
+    'data-science',
+    'ai',
+    'database',
+    'elixir',
+    'architecture',
+    'cloud',
+    'devops',
+    'crypto',
+    'java',
+    'golang',
+    'gaming',
+    'javascript',
+    'machine-learning',
+    'mobile',
+    '.net',
+    'open-source',
+    'react',
+    'python',
+    'ruby',
+    'rust',
+    'security',
+    'testing',
+    'tech-news',
+    'tools',
+    'webdev',
+    'github',
+    'beginners',
+    'tutorial'
+  ]
 
   function renderOnboardingTags(filter = '') {
-    tagsContainer.innerHTML = '';
-    const filtered = ALL_AVAILABLE_TAGS.filter(tag =>
+    tagsContainer.innerHTML = ''
+    const filtered = ALL_AVAILABLE_TAGS.filter((tag) =>
       tag.toLowerCase().includes(filter.toLowerCase())
-    );
-    filtered.forEach(tag => {
-      const btn = document.createElement('button');
-      btn.textContent = tag;
-      btn.style.padding = '8px 16px';
-      btn.style.borderRadius = '20px';
-      btn.style.background = selectedTags.includes(tag) ? '#0070f3' : '#2d2d2d';
-      btn.style.color = selectedTags.includes(tag) ? 'white' : '#cccccc';
-      btn.style.border = selectedTags.includes(tag) ? '1px solid #0056b3' : '1px solid transparent';
-      btn.style.cursor = 'pointer';
+    )
+    filtered.forEach((tag) => {
+      const btn = document.createElement('button')
+      btn.textContent = tag
+      btn.style.padding = '8px 16px'
+      btn.style.borderRadius = '20px'
+      btn.style.background = selectedTags.includes(tag) ? '#0070f3' : '#2d2d2d'
+      btn.style.color = selectedTags.includes(tag) ? 'white' : '#cccccc'
+      btn.style.border = selectedTags.includes(tag) ? '1px solid #0056b3' : '1px solid transparent'
+      btn.style.cursor = 'pointer'
       btn.onclick = () => {
-        const idx = selectedTags.indexOf(tag);
+        const idx = selectedTags.indexOf(tag)
         if (idx === -1) {
-          selectedTags.push(tag);
+          selectedTags.push(tag)
         } else {
-          selectedTags.splice(idx, 1);
+          selectedTags.splice(idx, 1)
         }
-        renderOnboardingTags(filter);
-        nextBtn.disabled = selectedTags.length === 0;
-      };
-      tagsContainer.appendChild(btn);
-    });
+        renderOnboardingTags(filter)
+        nextBtn.disabled = selectedTags.length === 0
+      }
+      tagsContainer.appendChild(btn)
+    })
   }
 
-  renderOnboardingTags();
-  nextBtn.disabled = selectedTags.length === 0;
+  renderOnboardingTags()
+  nextBtn.disabled = selectedTags.length === 0
 
   searchInput.addEventListener('input', (e) => {
-    renderOnboardingTags(e.target.value);
-  });
+    renderOnboardingTags(e.target.value)
+  })
 
   const handleNext = () => {
-    localStorage.setItem('userTags', JSON.stringify(selectedTags));
-    TAGS = selectedTags;
-    onboardingEl.style.display = 'none';
-    renderTagList();
-    setupSearchBar();
-    loadArticles(null, 1, true);
-    setupInfiniteScroll();
-    nextBtn.removeEventListener('click', handleNext);
-  };
+    localStorage.setItem('userTags', JSON.stringify(selectedTags))
+    TAGS = selectedTags
+    onboardingEl.style.display = 'none'
+    renderTagList()
+    setupSearchBar()
+    loadArticles(null, 1, true)
+    setupInfiniteScroll()
+    nextBtn.removeEventListener('click', handleNext)
+  }
 
-  nextBtn.addEventListener('click', handleNext);
+  nextBtn.addEventListener('click', handleNext)
 }
 
 // === DÉMARRAGE ===
 document.addEventListener('DOMContentLoaded', () => {
-  const hasUserTags = localStorage.getItem('userTags') !== null;
+  const hasUserTags = localStorage.getItem('userTags') !== null
 
   if (hasUserTags) {
-    renderTagList();
-    loadArticles(null, 1, true);
-    setupInfiniteScroll();
-    setupSearchBar();
+    renderTagList()
+    loadArticles(null, 1, true)
+    setupInfiniteScroll()
+    setupSearchBar()
   } else {
-    showOnboarding([]);
+    showOnboarding([])
   }
-});
+})

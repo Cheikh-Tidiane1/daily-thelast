@@ -52,11 +52,51 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  /*ipcMain.on('ping', () => console.log('pong'))
   ipcMain.on('open-external-url', (event, url) => {
     if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
       shell.openExternal(url)
     }
+  })*/
+
+  // Ouvrir un article dans une fenêtre modale
+  ipcMain.on('open-article-window', (event, url) => {
+    if (typeof url !== 'string' || !url.startsWith('http')) return
+
+    const articleWindow = new BrowserWindow({
+      width: 1000,
+      height: 700,
+      minWidth: 600,
+      minHeight: 400,
+      autoHideMenuBar: true,
+      webPreferences: {
+        sandbox: true, // sécurité maximale
+        contextIsolation: true,
+        nodeIntegration: false
+      },
+      parent: BrowserWindow.getFocusedWindow(), // fenêtre modale
+      modal: false, // ou true si tu veux bloquer la fenêtre principale
+      show: false // afficher après chargement
+    })
+
+    // Optionnel : personnaliser le titre
+    articleWindow.webContents.once('did-finish-load', () => {
+      articleWindow.setTitle('Article – daily.dev Clone')
+      articleWindow.show()
+    })
+
+    articleWindow.loadURL(url)
+
+    // Optionnel : ouvrir les liens externes dans le navigateur
+    articleWindow.webContents.setWindowOpenHandler(({ url }) => {
+      shell.openExternal(url)
+      return { action: 'deny' }
+    })
+
+    // Nettoyage (optionnel)
+    articleWindow.on('closed', () => {
+      // Rien à faire
+    })
   })
 
   createWindow()
