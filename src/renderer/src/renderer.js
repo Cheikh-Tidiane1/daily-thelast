@@ -285,6 +285,16 @@ function renderTagList() {
     })
     tagList.appendChild(li)
   })
+
+  const editBtn = document.getElementById('editTagsBtn')
+  if (editBtn) {
+    // Éviter les doubles listeners
+    if (!editBtn.onclick) {
+      editBtn.onclick = () => {
+        showOnboarding([...TAGS])
+      }
+    }
+  }
 }
 
 // === FONCTION RÉUTILISABLE POUR L'ONBOARDING ===
