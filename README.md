@@ -1,14 +1,27 @@
-# daily-dev-clone
+# daily.dev Clone – Electron App
 
-A minimal Electron application with JavaScript
+Une application de bureau open-source inspirée de [daily.dev](https://daily.dev), construite avec **Electron.js**.  
+Elle agrège les derniers articles de développeurs depuis l’API publique de **dev.to** et les affiche dans une interface moderne, épurée et fonctionnelle.
 
-## Recommended IDE Setup
+## ✨ Fonctionnalités
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+- 📰 Affichage du flux d’articles récents (titre, résumé, tags, auteur, durée de lecture)
+- 🖼️ Cartes avec images ou fallbacks SVG personnalisés
+- 🔍 Recherche par **tag** (ex: `javascript`, `react`, `spring`)
+- 🏷️ Personnalisation des tags via un onboarding intuitif
+- 📥 Clic sur une card → ouverture de l’article dans une **fenêtre dédiée** (sans quitter l’application)
+- 🌑 Thème sombre inspiré de daily.dev
+- ♾️ Scroll infini pour charger plus d’articles
+- ⚙️ Interface entièrement responsive
 
-## Project Setup
+## 🛠️ Technologies utilisées
 
-### Install
+- **Electron.js** – Application de bureau multiplateforme
+- **dev.to API** – Source des articles (publique, sans authentification)
+- **JavaScript (ES6+)** – Logique frontend et backend léger
+- **HTML/CSS** – Interface utilisateur moderne et performante
+
+## 🚀 Installation
 
 ```bash
 $ npm install
