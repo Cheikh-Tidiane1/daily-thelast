@@ -1,0 +1,43 @@
+export const DEFAULT_TAGS = [
+  'javascript',
+  'python',
+  'webdev',
+  'devops',
+  'react',
+  'rust',
+  'ai',
+  'github',
+  'beginners',
+  'tutorial'
+]
+
+export const ALL_AVAILABLE_TAGS = [
+    'data-science',
+    'ai',
+    'database',
+    'elixir',
+    'architecture',
+    'cloud',
+    'devops',
+    'crypto',
+    'java',
+    'golang',
+    'gaming',
+    'javascript',
+    'machine-learning',
+    'mobile',
+    '.net',
+    'open-source',
+    'react',
+    'python',
+    'ruby',
+    'rust',
+    'security',
+    'testing',
+    'tech-news',
+    'tools',
+    'webdev',
+    'github',
+    'beginners',
+    'tutorial'
+  ]

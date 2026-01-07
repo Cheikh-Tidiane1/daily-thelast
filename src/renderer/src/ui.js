@@ -1,4 +1,6 @@
-// === ICÔNES POUR LA SIDEBAR ===
+import {DEFAULT_TAGS, ALL_AVAILABLE_TAGS} from './config'
+
+
 const ICONS = {
   all: `<svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`,
   javascript: `<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm10.5 13.5h3v-9h-3v9zm-4.5 0V12H6v4.5h3z"/></svg>`,
@@ -13,18 +15,7 @@ const ICONS = {
   tutorial: `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>`
 }
 
-const DEFAULT_TAGS = [
-  'javascript',
-  'python',
-  'webdev',
-  'devops',
-  'react',
-  'rust',
-  'ai',
-  'github',
-  'beginners',
-  'tutorial'
-]
+
 
 // === ÉTAT GLOBAL ===
 let TAGS = [...DEFAULT_TAGS]
@@ -393,36 +384,7 @@ function showOnboarding(initialTags = []) {
   const nextBtn = document.getElementById('nextBtn')
   let selectedTags = [...initialTags]
 
-  const ALL_AVAILABLE_TAGS = [
-    'data-science',
-    'ai',
-    'database',
-    'elixir',
-    'architecture',
-    'cloud',
-    'devops',
-    'crypto',
-    'java',
-    'golang',
-    'gaming',
-    'javascript',
-    'machine-learning',
-    'mobile',
-    '.net',
-    'open-source',
-    'react',
-    'python',
-    'ruby',
-    'rust',
-    'security',
-    'testing',
-    'tech-news',
-    'tools',
-    'webdev',
-    'github',
-    'beginners',
-    'tutorial'
-  ]
+
 
   function renderOnboardingTags(filter = '') {
     tagsContainer.innerHTML = ''

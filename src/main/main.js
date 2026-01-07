@@ -4,7 +4,6 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
 function createWindow() {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -51,53 +50,43 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  /*ipcMain.on('ping', () => console.log('pong'))
-  ipcMain.on('open-external-url', (event, url) => {
-    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
-      shell.openExternal(url)
-    }
-  })*/
+
 
   // Ouvrir un article dans une fenêtre modale
-  ipcMain.on('open-article-window', (event, url) => {
-    if (typeof url !== 'string' || !url.startsWith('http')) return
+ipcMain.on('open-article-window', (event, url) => {
+  if (typeof url !== 'string' || !url.startsWith('http')) return;
 
-    const articleWindow = new BrowserWindow({
-      width: 1000,
-      height: 700,
-      minWidth: 600,
-      minHeight: 400,
-      autoHideMenuBar: true,
-      webPreferences: {
-        sandbox: true, // sécurité maximale
-        contextIsolation: true,
-        nodeIntegration: false
-      },
-      parent: BrowserWindow.getFocusedWindow(), // fenêtre modale
-      modal: false, // ou true si tu veux bloquer la fenêtre principale
-      show: false // afficher après chargement
-    })
+  const isDev = app.isPackaged === false;
 
-    // Optionnel : personnaliser le titre
-    articleWindow.webContents.once('did-finish-load', () => {
-      articleWindow.setTitle('Article – daily.dev Clone')
-      articleWindow.show()
-    })
+  const articleWindow = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    minWidth: 600,
+    minHeight: 400,
+    autoHideMenuBar: true,
+    webPreferences: {
+      sandbox: isDev ? false : true, // Plus rapide en dev
+      contextIsolation: true,
+      nodeIntegration: false
+    },
+    parent: BrowserWindow.getFocusedWindow(),
+    modal: false,
+    show: true // ← Afficher immédiatement
+  });
 
-    articleWindow.loadURL(url)
+  // Mettre à jour le titre après chargement
+  articleWindow.webContents.once('did-finish-load', () => {
+    articleWindow.setTitle('Article – daily.dev Clone');
+  });
 
-    // Optionnel : ouvrir les liens externes dans le navigateur
-    articleWindow.webContents.setWindowOpenHandler(({ url }) => {
-      shell.openExternal(url)
-      return { action: 'deny' }
-    })
+  articleWindow.loadURL(url);
 
-    // Nettoyage (optionnel)
-    articleWindow.on('closed', () => {
-      // Rien à faire
-    })
-  })
+  // Ouvrir liens externes dans le navigateur
+  articleWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+});
 
   createWindow()
 
